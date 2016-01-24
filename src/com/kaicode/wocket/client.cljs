@@ -1,4 +1,4 @@
-(ns wocket.client
+(ns com.kaicode.wocket.client
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [chord.client :refer [ws-ch]]
             [cljs.core.async :refer [<! >! put! chan]]

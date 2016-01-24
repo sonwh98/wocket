@@ -1,4 +1,4 @@
-(ns wocket.server
+(ns com.kaicode.wocket.server
   (:require [clojure.core.async :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]))
 
