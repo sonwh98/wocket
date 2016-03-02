@@ -5,7 +5,7 @@
 
 ;;a client-websocket-channel is a bidirectional core.async channel to read from and write messages to clients via websocket
 ;;client-websocket-channels contains all active/opened client-websocket-channel.
-(def client-websocket-channels (atom [])) )
+(def client-websocket-channels (atom []))
 
 (defmulti process-msg (fn [[client-websocket-channel [kw msg]]]
                         kw))
