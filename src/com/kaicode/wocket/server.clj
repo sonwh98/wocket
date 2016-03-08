@@ -1,7 +1,8 @@
 (ns com.kaicode.wocket.server
   (:require [clojure.core.async :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
-            [com.kaicode.mercury :as m]))
+            [com.kaicode.mercury :as m]
+            [com.kaicode.teleport :as t]))
 
 ;;a client-websocket-channel is a bidirectional core.async channel to read from and write messages to clients via websocket
 ;;client-websocket-channels contains all active/opened client-websocket-channel.
@@ -10,14 +11,15 @@
 (defmulti process-msg (fn [[client-websocket-channel [kw msg]]]
                         kw))
 
-(defn send! [client-websocket-channel transit-msg]
-  (go (>! client-websocket-channel transit-msg)))
+(defn send! [client-websocket-channel edn-msg]
+  (let [transit-msg (t/serialize edn-msg)]
+    (go (>! client-websocket-channel transit-msg))))
 
 (defn broadcast!
   "send transit-msg to all connected client-websocket-channels"
-  [transit-msg]
+  [edn-msg]
   (doseq [ws-channel @client-websocket-channels]
-    (send! ws-channel transit-msg)))
+    (send! ws-channel edn-msg)))
 
 (defn- remove-channel [client-websocket-channel]
   (reset! client-websocket-channels (filter #(not= % client-websocket-channel) @client-websocket-channels)))
@@ -31,7 +33,7 @@
 (defn- listen-for-messages-on [client-websocket-channel]
   (go-loop []
            (if-let [{:keys [message]} (<! client-websocket-channel)]
-             (do
+             (let [message (t/deserialize message)]
                (println "got " message)
                (process-msg [client-websocket-channel message])
                (recur))

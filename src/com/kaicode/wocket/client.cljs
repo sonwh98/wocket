@@ -24,7 +24,7 @@
         (m/broadcast [:websocket/connected true]))))
 
 (defn send! [msg]
-  (whenever-websocket-connected #(go (>! @server-websocket-channel msg))))
+  (whenever-websocket-connected #(go (>! @server-websocket-channel  (t/serialize msg)))))
 
 (defn listen-for-messages-from-websocket-server []
   (go-loop []
