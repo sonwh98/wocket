@@ -28,7 +28,7 @@
   (println "clean-up " client-websocket-channel)
   (remove-channel client-websocket-channel)
   (close! client-websocket-channel)
-  (m/broadcast [:client-websocket-closed client-websocket-channel]))
+  (m/broadcast [:client-websocket-channel-closed client-websocket-channel]))
 
 (defn- listen-for-messages-on [client-websocket-channel]
   (go-loop []
