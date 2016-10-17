@@ -10,39 +10,39 @@
 
 ;;closure that executes a call-back-fn if the :websocket/connected topic has ever been broadcasted
 ;;example usage: (if-websocket-open #(println "websocket is open"))
-(def whenever-websocket-connected (m/whenever :websocket/connected :broadcasted))
+(def whenever-websocket-connected (m/whenever :websocket/connected))
 
 ;;multi method that dispatches based on the first attribute of the msg. a msg is a vector of the form [keyword val]
 (defmulti process-msg (fn [[kw val]]
-                          kw))
+                        kw))
 
 (defn connect-to-websocket-server []
-      (go (let [protocol (.. js/window -location -protocol)
-                protocol (if (= protocol "http:")
-                           "ws://"
-                           "wss://")
-                host (.. js/window -location -hostname)
-                port (.. js/window -location -port)
-                port (if (or (= "80" port)
-                             (= "" port))
-                       ""
-                       (str ":" port))
-                url (str protocol host port "/ws")
-                {:keys [ws-channel error]} (<! (ws-ch url))]
+  (go (let [protocol (.. js/window -location -protocol)
+            protocol (if (= protocol "http:")
+                       "ws://"
+                       "wss://")
+            host (.. js/window -location -hostname)
+            port (.. js/window -location -port)
+            port (if (or (= "80" port)
+                         (= "" port))
+                   ""
+                   (str ":" port))
+            url (str protocol host port "/ws")
+            {:keys [ws-channel error]} (<! (ws-ch url))]
 
 
-               (reset! server-websocket-channel ws-channel)
-               (m/broadcast [:websocket/connected true]))))
+        (reset! server-websocket-channel ws-channel)
+        (m/broadcast [:websocket/connected true]))))
 
 (defn send! [msg]
-      (whenever-websocket-connected #(go (>! @server-websocket-channel (t/serialize msg)))))
+  (whenever-websocket-connected #(go (>! @server-websocket-channel (t/serialize msg)))))
 
 (defn listen-for-messages-from-websocket-server []
-      (go-loop []
-               (if-let [{:keys [message]} (<! @server-websocket-channel)]
-                       (let [msg (t/deserialize message)]
-                            (process-msg msg)
-                            (recur)))))
+  (go-loop []
+    (if-let [{:keys [message]} (<! @server-websocket-channel)]
+      (let [msg (t/deserialize message)]
+        (process-msg msg)
+        (recur)))))
 
 (connect-to-websocket-server)
 (whenever-websocket-connected listen-for-messages-from-websocket-server)
