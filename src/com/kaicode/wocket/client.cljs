@@ -29,8 +29,7 @@
                    (str ":" port))
             url (str protocol host port "/ws")
             {:keys [ws-channel error]} (<! (ws-ch url))]
-        (if error
-          (js/alert "cannot connect to server")
+        (when-not error
           (do (reset! server-websocket-channel ws-channel)
               (m/broadcast [:websocket/connected true]))))))
 
@@ -43,8 +42,9 @@
       (let [msg (t/deserialize message)]
         (process-msg msg))
       (do
+        (js/alert "Disconnected from serverr. Click OK to attempt reconnect")
         (connect-to-websocket-server)
-        (<! (a/timeout 3000))))
+        (<! (a/timeout 5000))))
     (recur)))
 
 (connect-to-websocket-server)
