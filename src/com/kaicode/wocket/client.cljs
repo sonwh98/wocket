@@ -1,7 +1,7 @@
 (ns com.kaicode.wocket.client
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [chord.client :refer [ws-ch]]
-            [cljs.core.async :refer [<! >! put! chan]]
+            [cljs.core.async :as a :refer [<! >! put! chan]]
             [com.kaicode.mercury :as m]
             [com.kaicode.teleport :as t]))
 
@@ -29,9 +29,10 @@
                    (str ":" port))
             url (str protocol host port "/ws")
             {:keys [ws-channel error]} (<! (ws-ch url))]
-        
-        (reset! server-websocket-channel ws-channel)
-        (m/broadcast [:websocket/connected true]))))
+        (if error
+          (js/alert "cannot connect to server")
+          (do (reset! server-websocket-channel ws-channel)
+              (m/broadcast [:websocket/connected true]))))))
 
 (defn send! [msg]
   (whenever-websocket-connected #(go (>! @server-websocket-channel (t/serialize msg)))))
@@ -40,8 +41,11 @@
   (go-loop []
     (if-let [{:keys [message]} (<! @server-websocket-channel)]
       (let [msg (t/deserialize message)]
-        (process-msg msg)
-        (recur)))))
+        (process-msg msg))
+      (do
+        (connect-to-websocket-server)
+        (<! (a/timeout 3000))))
+    (recur)))
 
 (connect-to-websocket-server)
 (whenever-websocket-connected listen-for-messages-from-websocket-server)
