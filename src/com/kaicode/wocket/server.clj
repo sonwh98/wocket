@@ -32,14 +32,15 @@
 
 (defn- listen-for-messages-on [client-websocket-channel]
   (go-loop []
-           (if-let [{:keys [message]} (<! client-websocket-channel)]
-             (let [message (t/deserialize message)]
-               (println "got " message)
-               (process-msg [client-websocket-channel message])
-               (recur))
-             (clean-up! client-websocket-channel))))
+    (if-let [{:keys [message]} (<! client-websocket-channel)]
+      (let [message (t/deserialize message)]
+        (println "got " message)
+        (process-msg [client-websocket-channel message])
+        (recur))
+      (clean-up! client-websocket-channel))))
 
 (defn listen-for-client-websocket-connections [request]
   (with-channel request websocket-channel
-                (swap! client-websocket-channels conj websocket-channel)
-                (listen-for-messages-on websocket-channel)))
+    (swap! client-websocket-channels conj websocket-channel)
+    (listen-for-messages-on websocket-channel)))
+
