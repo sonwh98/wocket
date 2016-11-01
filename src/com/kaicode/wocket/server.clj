@@ -48,8 +48,10 @@
   (println "pong " timestamp))
 
 (go-loop []
-  (doseq [cws-chan @client-websocket-channels]
-    (send! cws-chan [:ping (java.util.Date.)]))
+  (doseq [cws-chan @client-websocket-channels
+          :let [timestamp (java.util.Date.)]]
+    (println "ping" timestamp)
+    (send! cws-chan [:ping timestamp]))
   
   (<! (a/timeout 30000))
   (recur))
