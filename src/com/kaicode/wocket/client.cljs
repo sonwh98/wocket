@@ -47,5 +47,9 @@
         (<! (a/timeout 5000))))
     (recur)))
 
+(defmethod process-msg :ping [[_ timestamp]]
+  (println "ping " timestamp)
+  (send! [:pong (js/Date.)]))
+
 (connect-to-websocket-server)
 (whenever-websocket-connected listen-for-messages-from-websocket-server)

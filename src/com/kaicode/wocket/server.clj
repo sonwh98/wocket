@@ -1,5 +1,5 @@
 (ns com.kaicode.wocket.server
-  (:require [clojure.core.async :refer [<! >! put! close! go go-loop]]
+  (:require [clojure.core.async :as a :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
             [com.kaicode.mercury :as m]
             [com.kaicode.teleport :as t]))
@@ -44,3 +44,12 @@
     (swap! client-websocket-channels conj websocket-channel)
     (listen-for-messages-on websocket-channel)))
 
+(defmethod process-msg :pong [[_ timestamp]]
+  (println "pong " timestamp))
+
+(go-loop []
+  (doseq [cws-chan @client-websocket-channels]
+    (send! cws-chan [:ping (java.util.Date.)]))
+  
+  (<! (a/timeout 30000))
+  (recur))
