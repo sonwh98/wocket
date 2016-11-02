@@ -1,6 +1,7 @@
 (ns com.kaicode.wocket.server
   (:require [clojure.core.async :as a :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
+            [clojure.tools.logging :as log]
             [com.kaicode.mercury :as m]
             [com.kaicode.teleport :as t]))
 
@@ -25,7 +26,7 @@
   (reset! client-websocket-channels (filter #(not= % client-websocket-channel) @client-websocket-channels)))
 
 (defn- clean-up! [client-websocket-channel]
-  (println "clean-up " client-websocket-channel)
+  (log/info "clean-up " client-websocket-channel)
   (remove-channel client-websocket-channel)
   (close! client-websocket-channel)
   (m/broadcast [:client-websocket-channel-closed client-websocket-channel]))
@@ -34,7 +35,7 @@
   (go-loop []
     (if-let [{:keys [message]} (<! client-websocket-channel)]
       (let [message (t/deserialize message)]
-        (println "got " message)
+        (log/info "client-message: " message)
         (process-msg [client-websocket-channel message])
         (recur))
       (clean-up! client-websocket-channel))))
@@ -45,12 +46,12 @@
     (listen-for-messages-on websocket-channel)))
 
 (defmethod process-msg :pong [[_ timestamp]]
-  (println "pong " timestamp))
+  (log/debug "pong " timestamp))
 
 (go-loop []
   (doseq [cws-chan @client-websocket-channels
           :let [timestamp (java.util.Date.)]]
-    (println "ping" timestamp)
+    (log/debug "ping" timestamp)
     (send! cws-chan [:ping timestamp]))
   
   (<! (a/timeout 30000))
