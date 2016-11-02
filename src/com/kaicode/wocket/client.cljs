@@ -48,7 +48,6 @@
     (recur)))
 
 (defmethod process-msg :ping [[_ timestamp]]
-  (println "ping " timestamp)
   (send! [:pong (js/Date.)]))
 
 (connect-to-websocket-server)
