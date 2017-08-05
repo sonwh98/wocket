@@ -36,11 +36,17 @@
               (m/broadcast [:websocket/connected true]))))))
 
 (defn send! [msg]
-  (go
-    (if @connected?
-      (>! @server-websocket-channel (t/serialize msg))
-      (prn "queue" msg)
-      )))
+  (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
+            send-queue (conj (or send-queue []) msg)]
+        (if @connected?
+          (do
+            (doseq [m send-queue]
+              (prn "sending " m)
+              (>! @server-websocket-channel (t/serialize m)))
+            (js/localStorage.setItem "send-queue" nil))
+          (do
+            (prn "queuing " send-queue)
+            (js/localStorage.setItem "send-queue" (t/serialize send-queue)))))))
 
 (defn listen-for-messages-from-websocket-server []
   (go-loop []
