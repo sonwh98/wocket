@@ -42,7 +42,7 @@
       (let [msg (t/deserialize message)]
         (process-msg msg))
       (do
-        (js/alert "Disconnected from serverr. Click OK to attempt reconnect")
+        (prn "Disconnected from serverr. trying to reconnect")
         (connect-to-websocket-server)
         (<! (a/timeout 5000))))
     (recur)))
