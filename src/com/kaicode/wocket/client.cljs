@@ -7,6 +7,7 @@
 
 ;;server-websocket-channel contains a bidirectional core.async channel used to send and read messages from the server
 (def server-websocket-channel (atom nil))
+(def connected? (atom false))
 
 ;;closure that executes a call-back-fn if the :websocket/connected topic has ever been broadcasted
 ;;example usage: (if-websocket-open #(println "websocket is open"))
@@ -31,10 +32,15 @@
             {:keys [ws-channel error]} (<! (ws-ch url))]
         (when-not error
           (do (reset! server-websocket-channel ws-channel)
+              (reset! connected? true)
               (m/broadcast [:websocket/connected true]))))))
 
 (defn send! [msg]
-  (whenever-websocket-connected #(go (>! @server-websocket-channel (t/serialize msg)))))
+  (go
+    (if @connected?
+      (>! @server-websocket-channel (t/serialize msg))
+      (prn "queue" msg)
+      )))
 
 (defn listen-for-messages-from-websocket-server []
   (go-loop []
@@ -43,6 +49,7 @@
         (process-msg msg))
       (do
         (prn "Disconnected from serverr. trying to reconnect")
+        (reset! connected? false)
         (connect-to-websocket-server)
         (<! (a/timeout 5000))))
     (recur)))
