@@ -36,12 +36,12 @@
         (process-msg msg)
         (recur true))
       (do
-        (m/broadcast [:websocket/connected? false])
+        (<! (a/timeout 5000))
+        (m/broadcast [:websocket/socket-channel nil])
         (recur false)))))
 
 (m/on :websocket/socket-channel (fn [[_ socket-channel]]
                                   (reset! server-websocket-channel socket-channel)
-                                  
                                   (if socket-channel
                                     (do
                                       (prn "Connected to server")
