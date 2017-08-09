@@ -25,8 +25,11 @@
                    (str ":" port))
             url (str protocol host port "/ws")
             {:keys [ws-channel error]} (<! (ws-ch url))]
+        
         (if error
-          (m/broadcast [:websocket/socket-channel nil])
+          (do
+            (<! (a/timeout 5000))
+            (m/broadcast [:websocket/socket-channel nil]))
           (m/broadcast [:websocket/socket-channel ws-channel])))))
 
 (defn listen-for-messages-from-websocket-server []
@@ -36,7 +39,6 @@
         (process-msg msg)
         (recur true))
       (do
-        (<! (a/timeout 5000))
         (m/broadcast [:websocket/socket-channel nil])
         (recur false)))))
 
