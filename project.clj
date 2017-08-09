@@ -2,5 +2,5 @@
   :source-paths ["src"]
   :dependencies [[com.kaicode/teleport "0.1.1-SNAPSHOT"]
                  [com.kaicode/mercury "0.1.2-SNAPSHOT"]
-                 [jarohen/chord "0.7.0"]
+                 [jarohen/chord "0.8.1"]
                  [org.clojure/tools.logging "0.3.1"]])
