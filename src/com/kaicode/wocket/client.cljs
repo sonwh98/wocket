@@ -5,6 +5,7 @@
             [com.kaicode.mercury :as m]
             [com.kaicode.teleport :as t]))
 
+
 ;;server-websocket-channel contains a bidirectional core.async channel used to send and read messages from the server
 (def server-websocket-channel (atom nil))
 
@@ -39,6 +40,7 @@
         (process-msg msg)
         (recur true))
       (do
+        (<! (a/timeout 5000))
         (m/broadcast [:websocket/socket-channel nil])
         (recur false)))))
 
