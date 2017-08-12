@@ -14,45 +14,40 @@
                         kw))
 
 (defn connect-to-websocket-server []
-  (go (let [protocol (.. js/window -location -protocol)
-            protocol (if (= protocol "http:")
-                       "ws://"
-                       "wss://")
-            host (.. js/window -location -hostname)
-            port (.. js/window -location -port)
-            port (if (or (= "80" port)
-                         (= "" port))
-                   ""
-                   (str ":" port))
-            url (str protocol host port "/ws")
-            {:keys [ws-channel error]} (<! (ws-ch url))]
-        
-        (if error
-          (do
-            (<! (a/timeout 5000))
-            (m/broadcast [:websocket/socket-channel nil]))
-          (m/broadcast [:websocket/socket-channel ws-channel])))))
-
-(defn listen-for-messages-from-websocket-server []
-  (go-loop [connected? true]
-    (if-let [{:keys [message]} (<! @server-websocket-channel)]
-      (let [msg (t/deserialize message)]
-        (process-msg msg)
-        (recur true))
-      (do
-        (<! (a/timeout 5000))
-        (m/broadcast [:websocket/socket-channel nil])
-        (recur false)))))
-
-(m/on :websocket/socket-channel (fn [[_ socket-channel]]
-                                  (reset! server-websocket-channel socket-channel)
-                                  (if socket-channel
-                                    (do
-                                      (prn "Connected to server")
-                                      (listen-for-messages-from-websocket-server))
-                                    (do
-                                      (prn "Disconnected from server. trying to reconnect")
-                                      (connect-to-websocket-server)))))
+  (go-loop []
+    (let [protocol (.. js/window -location -protocol)
+          protocol (if (= protocol "http:")
+                     "ws://"
+                     "wss://")
+          host (.. js/window -location -hostname)
+          port (.. js/window -location -port)
+          port (if (or (= "80" port)
+                       (= "" port))
+                 ""
+                 (str ":" port))
+          url (str protocol host port "/ws")
+          {:keys [ws-channel error]} (<! (ws-ch url))]
+      
+      (if error
+        (do
+          (reset! server-websocket-channel nil)
+          (prn "error" error)
+          (recur))
+        (do
+          (prn "websocket connected")
+          (reset! server-websocket-channel ws-channel)
+          (m/broadcast [:websocket/connected true])
+          (loop [connected? true]
+            (when connected?
+              (if-let [{:keys [message]} (<! ws-channel)]
+                (let [msg (t/deserialize message)]
+                  (process-msg msg)
+                  (recur true))
+                (do
+                  (reset! server-websocket-channel nil)
+                  (prn "trying reconnect...")
+                  (recur false)))))
+          (recur))))))
 
 (defn send! [msg]
   (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
