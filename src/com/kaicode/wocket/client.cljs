@@ -31,7 +31,8 @@
       (if error
         (do
           (reset! server-websocket-channel nil)
-          (prn "error" error)
+          (prn "websocket error" error)
+          (<! (a/timeout 5000))
           (recur))
         (do
           (prn "websocket connected")
