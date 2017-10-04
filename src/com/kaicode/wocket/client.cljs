@@ -38,17 +38,17 @@
           (prn "websocket connected")
           (reset! server-websocket-channel ws-channel)
           (m/broadcast [:websocket/connected true])
-          (loop [connected? true]
-            (when connected?
-              (if-let [{:keys [message]} (<! ws-channel)]
-                (let [msg (t/deserialize message)]
-                  (process-msg msg)
-                  (recur true))
-                (do
-                  (reset! server-websocket-channel nil)
-                  (prn "trying reconnect...")
-                  (recur false)))))
-          (recur))))))
+          (loop []
+            (if-let [{:keys [message]} (<! ws-channel)]
+              (let [msg (t/deserialize message)]
+                (process-msg msg)
+                (recur))
+              (do
+                (reset! server-websocket-channel nil)
+                (prn "trying reconnect..."))))
+          (recur))
+
+        ))))
 
 (defn send! [msg]
   (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
