@@ -26,7 +26,7 @@
                  ""
                  (str ":" port))
           url (str protocol host port "/ws")
-          {:keys [ws-channel error]} (<! (ws-ch url))]
+          {:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
       
       (if error
         (do
