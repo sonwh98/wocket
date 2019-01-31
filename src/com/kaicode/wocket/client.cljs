@@ -13,19 +13,20 @@
 (defmulti process-msg (fn [[kw val]]
                         kw))
 
-(defn connect-to-websocket-server []
+(defn connect-to-websocket-server [{:keys [host port uri]}]
   (go-loop []
     (let [protocol (.. js/window -location -protocol)
           protocol (if (= protocol "http:")
                      "ws://"
                      "wss://")
-          host (.. js/window -location -hostname)
-          port (.. js/window -location -port)
+          host (or host (.. js/window -location -hostname))
+          port (or port (.. js/window -location -port))
           port (if (or (= "80" port)
                        (= "" port))
                  ""
                  (str ":" port))
-          url (str protocol host port "/ws")
+          uri (or uri "/ws")
+          url (str protocol host port uri)
           {:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
       
       (if error
@@ -46,9 +47,7 @@
               (do
                 (reset! server-websocket-channel nil)
                 (prn "trying reconnect..."))))
-          (recur))
-
-        ))))
+          (recur))))))
 
 (defn send! [msg]
   (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
