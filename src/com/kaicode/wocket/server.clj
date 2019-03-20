@@ -35,7 +35,7 @@
   (go-loop []
     (if-let [{:keys [message]} (<! client-websocket-channel)]
       (let [message (t/deserialize message)]
-        (log/info "client-message: " message)
+        (log/debug "client-message: " message)
         (process-msg [client-websocket-channel message])
         (recur))
       (clean-up! client-websocket-channel))))
