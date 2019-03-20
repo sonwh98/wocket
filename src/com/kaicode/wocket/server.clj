@@ -1,7 +1,7 @@
 (ns com.kaicode.wocket.server
   (:require [clojure.core.async :as a :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
-            [clojure.tools.logging :as log]
+            [taoensso.timbre :as log]
             [com.kaicode.mercury :as m]
             [com.kaicode.teleport :as t]))
 
@@ -53,6 +53,6 @@
           :let [timestamp (java.util.Date.)]]
     (log/debug "ping" timestamp)
     (send! cws-chan [:ping timestamp]))
-  
+
   (<! (a/timeout 30000))
   (recur))

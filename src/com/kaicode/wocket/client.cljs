@@ -3,7 +3,8 @@
   (:require [chord.client :refer [ws-ch]]
             [cljs.core.async :as a :refer [<! >! put! chan]]
             [com.kaicode.mercury :as m]
-            [com.kaicode.teleport :as t]))
+            [com.kaicode.teleport :as t]
+            [taoensso.timbre :as log :include-macros true]))
 
 
 ;;server-websocket-channel contains a bidirectional core.async channel used to send and read messages from the server
@@ -32,11 +33,11 @@
       (if error
         (do
           (reset! server-websocket-channel nil)
-          (prn "websocket error" error)
+          (log/debug "websocket error" error)
           (<! (a/timeout 5000))
           (recur))
         (do
-          (prn "websocket connected")
+          (log/debug "websocket connected")
           (reset! server-websocket-channel ws-channel)
           (m/broadcast [:websocket/connected true])
           (loop []
@@ -46,7 +47,7 @@
                 (recur))
               (do
                 (reset! server-websocket-channel nil)
-                (prn "trying reconnect..."))))
+                (log/debug "trying reconnect..."))))
           (recur))))))
 
 (defn send! [msg]
@@ -55,11 +56,11 @@
         (if @server-websocket-channel
           (do
             (doseq [m send-queue]
-              (prn "sending " m)
+              (log/debug "sending " m)
               (>! @server-websocket-channel (t/serialize m)))
             (js/localStorage.setItem "send-queue" nil))
           (let [send-queue (remove #(= :pong (first %)) send-queue)]
-            (prn "websocket disconnected. queuing msg " send-queue)
+            (log/debug "websocket disconnected. queuing msg " send-queue)
             (js/localStorage.setItem "send-queue" (t/serialize send-queue)))))))
 
 (defmethod process-msg :ping [[_ timestamp]]
