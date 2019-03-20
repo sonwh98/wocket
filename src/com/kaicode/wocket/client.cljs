@@ -33,11 +33,11 @@
       (if error
         (do
           (reset! server-websocket-channel nil)
-          (log/debug "websocket error" error)
+          (log/error "websocket error" error)
           (<! (a/timeout 5000))
           (recur))
         (do
-          (log/debug "websocket connected")
+          (log/info "websocket connected")
           (reset! server-websocket-channel ws-channel)
           (m/broadcast [:websocket/connected true])
           (loop []
@@ -60,7 +60,7 @@
               (>! @server-websocket-channel (t/serialize m)))
             (js/localStorage.setItem "send-queue" nil))
           (let [send-queue (remove #(= :pong (first %)) send-queue)]
-            (log/debug "websocket disconnected. queuing msg " send-queue)
+            (log/error "websocket disconnected. queuing msg " send-queue)
             (js/localStorage.setItem "send-queue" (t/serialize send-queue)))))))
 
 (defmethod process-msg :ping [[_ timestamp]]
