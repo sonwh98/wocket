@@ -1,0 +1,1 @@
+{:main chat.init, :asset-path "js/compiled/out", :output-to "resources/public/js/compiled/chat.js", :output-dir "resources/public/js/compiled/out", :source-map-timestamp true, :preloads [devtools.preload figwheel.connect], :optimizations :none, :external-config #:figwheel{:config {:on-jsload "chat.jsload", :build-id "dev", :websocket-url "ws://localhost:3449/figwheel-ws"}}}
