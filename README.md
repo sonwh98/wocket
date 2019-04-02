@@ -9,7 +9,7 @@ WebRTC.
     
 # Quick Start
 
-See chat.demo for a complete example.
+See [chat demo](/example-project) for a complete example.
 
 ## Server-side Clojure setup
 
