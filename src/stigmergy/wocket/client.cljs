@@ -15,18 +15,18 @@
                         kw))
 
 (defn connect-to-websocket-server [{:keys [host port uri]}]
-  (let [[protocol (.. js/window -location -protocol)
-         protocol (if (= protocol "http:")
-                    "ws://"
-                    "wss://")
-         host (or host (.. js/window -location -hostname))
-         port (or port (.. js/window -location -port))
-         port (if (or (= "80" port)
-                      (= "" port))
-                ""
-                (str ":" port))
-         uri (or uri "/ws")
-         url (str protocol host port uri)]]
+  (let [protocol (.. js/window -location -protocol)
+        protocol (if (= protocol "http:")
+                   "ws://"
+                   "wss://")
+        host (or host (.. js/window -location -hostname))
+        port (or port (.. js/window -location -port))
+        port (if (or (= "80" port)
+                     (= "" port))
+               ""
+               (str ":" port))
+        uri (or uri "/ws")
+        url (str protocol host port uri)]
     (go-loop []
       (let [{:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
         (if error
@@ -42,6 +42,7 @@
             (loop []
               (if-let [{:keys [message]} (<! ws-channel)]
                 (let [msg (t/deserialize message)]
+                  (m/broadcast msg)
                   (process-msg msg)
                   (recur))
                 (do
