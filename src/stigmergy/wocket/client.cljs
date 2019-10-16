@@ -1,4 +1,4 @@
-(ns com.kaicode.wocket.client
+(ns stigmergy.wocket.client
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [chord.client :refer [ws-ch]]
             [cljs.core.async :as a :refer [<! >! put! chan]]
@@ -15,40 +15,39 @@
                         kw))
 
 (defn connect-to-websocket-server [{:keys [host port uri]}]
-  (go-loop []
-    (let [protocol (.. js/window -location -protocol)
-          protocol (if (= protocol "http:")
-                     "ws://"
-                     "wss://")
-          host (or host (.. js/window -location -hostname))
-          port (or port (.. js/window -location -port))
-          port (if (or (= "80" port)
-                       (= "" port))
-                 ""
-                 (str ":" port))
-          uri (or uri "/ws")
-          url (str protocol host port uri)
-          {:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
-      
-      (if error
-        (do
-          (reset! server-websocket-channel nil)
-          (log/error "websocket error" error)
-          (<! (a/timeout 5000))
-          (recur))
-        (do
-          (log/info "websocket connected")
-          (reset! server-websocket-channel ws-channel)
-          (m/broadcast [:websocket/connected true])
-          (loop []
-            (if-let [{:keys [message]} (<! ws-channel)]
-              (let [msg (t/deserialize message)]
-                (process-msg msg)
-                (recur))
-              (do
-                (reset! server-websocket-channel nil)
-                (log/debug "trying reconnect..."))))
-          (recur))))))
+  (let [[protocol (.. js/window -location -protocol)
+         protocol (if (= protocol "http:")
+                    "ws://"
+                    "wss://")
+         host (or host (.. js/window -location -hostname))
+         port (or port (.. js/window -location -port))
+         port (if (or (= "80" port)
+                      (= "" port))
+                ""
+                (str ":" port))
+         uri (or uri "/ws")
+         url (str protocol host port uri)]]
+    (go-loop []
+      (let [{:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
+        (if error
+          (do
+            (reset! server-websocket-channel nil)
+            (log/error "websocket error" error)
+            (<! (a/timeout 5000))
+            (recur))
+          (do
+            (log/info "websocket connected")
+            (reset! server-websocket-channel ws-channel)
+            (m/broadcast [:websocket/connected true])
+            (loop []
+              (if-let [{:keys [message]} (<! ws-channel)]
+                (let [msg (t/deserialize message)]
+                  (process-msg msg)
+                  (recur))
+                (do
+                  (reset! server-websocket-channel nil)
+                  (log/debug "trying reconnect..."))))
+            (recur)))))))
 
 (defn send! [msg]
   (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
