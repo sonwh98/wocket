@@ -2,7 +2,7 @@
   (:require [compojure.core :refer [defroutes GET]]
             [compojure.route :as r]
             [org.httpkit.server :as h]
-            [com.kaicode.wocket.server :as ws :refer [process-msg]]
+            [stigmergy.wocket.server :as ws :refer [process-msg]]
             [taoensso.timbre :as log :include-macros true])
   (:gen-class))
 

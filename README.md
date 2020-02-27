@@ -5,7 +5,7 @@ WebRTC.
 
 # Dependency
 
-    [com.kaicode/wocket "0.1.5-SNAPSHOT"] 
+    [stigmergy/wocket "0.1.5-SNAPSHOT"] 
     
 # Quick Start
 
@@ -25,7 +25,7 @@ Setup a route for Websocket connection
 Connect to Clojure websocket server
 
 ```Clojure
-(require [com.kaicode.wocket.client :as ws :refer [process-msg]])
+(require [stigmergy.wocket.client :as ws :refer [process-msg]])
 
 (ws/connect-to-websocket-server {:port 3000}) ;; change the port for your configuration
 

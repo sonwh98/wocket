@@ -1,6 +1,6 @@
 (ns chat.init
   (:require [reagent.core :as r]
-            [com.kaicode.wocket.client :as ws :refer [process-msg]]))
+            [stigmergy.wocket.client :as ws :refer [process-msg]]))
 
 (def state (r/atom {:msg "hi"}))
 
