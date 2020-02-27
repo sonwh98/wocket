@@ -26,17 +26,19 @@
                ""
                (str ":" port))
         uri (or uri "/ws")
-        url (str protocol host port uri)]
+        url (str protocol host port uri)
+        connected-ch (chan (a/dropping-buffer 1))]
     (go-loop []
       (let [{:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
         (if error
           (do
             (reset! server-websocket-channel nil)
             (log/error "websocket error" error)
-            (<! (a/timeout 500))
+            (<! (a/timeout 1000))
             (recur))
           (do
             (log/info "websocket connected")
+            (a/>! connected-ch true)
             (reset! server-websocket-channel ws-channel)
             (m/broadcast [:websocket/connected true])
             (loop []
@@ -48,7 +50,8 @@
                 (do
                   (reset! server-websocket-channel nil)
                   (log/debug "trying reconnect..."))))
-            (recur)))))))
+            (recur)))))
+    connected-ch))
 
 (defn send! [msg]
   (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
