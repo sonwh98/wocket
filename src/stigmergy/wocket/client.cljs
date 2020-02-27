@@ -1,9 +1,8 @@
 (ns stigmergy.wocket.client
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [chord.client :refer [ws-ch]]
-            [cljs.core.async :as a :refer [<! >! put! chan]]
-            [com.kaicode.mercury :as m]
-            [com.kaicode.teleport :as t]
+            [clojure.core.async :as a :include-macros true]
+            [stigmergy.mercury :as m]
+            [stigmergy.teleport :as t]
             [taoensso.timbre :as log :include-macros true]))
 
 
@@ -27,14 +26,14 @@
                (str ":" port))
         uri (or uri "/ws")
         url (str protocol host port uri)
-        connected-ch (chan (a/dropping-buffer 1))]
-    (go-loop []
-      (let [{:keys [ws-channel error]} (<! (ws-ch url {:format :str}))]
+        connected-ch (a/chan (a/dropping-buffer 1))]
+    (a/go-loop []
+      (let [{:keys [ws-channel error]} (a/<! (ws-ch url {:format :str}))]
         (if error
           (do
             (reset! server-websocket-channel nil)
             (log/error "websocket error" error)
-            (<! (a/timeout 1000))
+            (a/<! (a/timeout 1000))
             (recur))
           (do
             (log/info "websocket connected")
@@ -42,7 +41,7 @@
             (reset! server-websocket-channel ws-channel)
             (m/broadcast [:websocket/connected true])
             (loop []
-              (if-let [{:keys [message]} (<! ws-channel)]
+              (if-let [{:keys [message]} (a/<! ws-channel)]
                 (let [msg (t/deserialize message)]
                   (m/broadcast msg)
                   (process-msg msg)
@@ -54,13 +53,13 @@
     connected-ch))
 
 (defn send! [msg]
-  (go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
+  (a/go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
             send-queue (conj (or send-queue []) msg)]
         (if @server-websocket-channel
           (do
             (doseq [m send-queue]
               (log/debug "sending " m)
-              (>! @server-websocket-channel (t/serialize m)))
+              (a/>! @server-websocket-channel (t/serialize m)))
             (js/localStorage.setItem "send-queue" nil))
           (let [send-queue (remove #(= :pong (first %)) send-queue)]
             (log/error "websocket disconnected. queuing msg " send-queue)

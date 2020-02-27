@@ -2,8 +2,8 @@
   (:require [clojure.core.async :as a :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
             [taoensso.timbre :as log]
-            [com.kaicode.mercury :as m]
-            [com.kaicode.teleport :as t]))
+            [stigmergy.mercury :as m]
+            [stigmergy.teleport :as t]))
 
 ;;a client-websocket-channel is a bidirectional core.async channel to read from and write messages to clients via websocket
 ;;client-websocket-channels contains all active/opened client-websocket-channel.

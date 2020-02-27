@@ -1,7 +1,7 @@
 (defproject  chat "0.0.1"
   :min-lein-version "2.8.3" 
   :dependencies [[org.clojure/clojure "1.10.0"]  
-                 [com.kaicode/wocket "0.1.5-SNAPSHOT"]
+                 [stigmergy.wocket "0.1.5-SNAPSHOT"]
                  [org.clojure/clojurescript "1.10.520"]
                  [compojure "1.6.1"]
                  [reagent "0.8.1"]
