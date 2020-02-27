@@ -33,7 +33,7 @@
           (do
             (reset! server-websocket-channel nil)
             (log/error "websocket error" error)
-            (<! (a/timeout 5000))
+            (<! (a/timeout 1000))
             (recur))
           (do
             (log/info "websocket connected")
