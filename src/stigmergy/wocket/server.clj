@@ -57,12 +57,10 @@
   `(-> ~func var meta :name keyword))
 
 (defn make-invokable [func msg-tag-kw]
-  (log/info "make-invokable msg-tag-kw=" msg-tag-kw)
   (defmethod process-msg msg-tag-kw [[client-websocket-channel [msg-tag msg-payload]]]
-    (log/info "process-msg msg-tag=" msg-tag " msg-payload=" msg-payload)
     (apply func [msg-payload])))
 
-(defmacro make-invokable2 [func]
+(defmacro as-service [func]
   `(make-invokable ~func (fn->keyword ~func)))
 
 (defmethod process-msg :pong [[_ timestamp]]
@@ -76,9 +74,3 @@
 
   (<! (a/timeout 30000))
   (recur))
-
-(comment
-  (defn foo [] "foo")
-  (var foo)
-  (fn->keyword foo)
-  )
