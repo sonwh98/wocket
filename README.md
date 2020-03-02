@@ -61,3 +61,13 @@ Likewise, the cljs client can recieve the message from the server with a multi-m
     (prn "message from server " msg-respond)
 )
 ```
+
+# Server broadcast to all connected clients
+
+Server side broadcast can easily be done
+
+```Clojure
+
+(ws/broadcast! [:msg-tag "msg from server to all clients"]
+
+```
