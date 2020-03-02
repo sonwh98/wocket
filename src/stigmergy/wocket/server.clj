@@ -58,7 +58,9 @@
 
 (defn make-invokable [func msg-tag-kw]
   (defmethod process-msg msg-tag-kw [[client-websocket-channel [msg-tag msg-payload]]]
-    (apply func [msg-payload])))
+    (if (sequential? msg-payload)
+      (apply func msg-payload)
+      (apply func [msg-payload]))))
 
 (defmacro as-service [func]
   `(make-invokable ~func (fn->keyword ~func)))
