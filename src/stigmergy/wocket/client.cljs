@@ -32,6 +32,7 @@
         connected-ch (a/chan (a/dropping-buffer 1))]
     (a/go-loop []
       (let [{:keys [ws-channel error]} (a/<! (ws-ch url {:format :str}))]
+        (log/debug "error=" error)
         (if error
           (do
             (reset! server-websocket-channel nil)
@@ -39,7 +40,7 @@
             (a/<! (a/timeout 1000))
             (recur))
           (do
-            (log/info "websocket connected")
+            (log/debug "websocket connected")
             (a/>! connected-ch true)
             (reset! server-websocket-channel ws-channel)
             (m/broadcast [:websocket/connected true])
@@ -48,9 +49,11 @@
                 (let [[msg-tag msg-payload :as msg] (t/deserialize message)]
                   (m/broadcast msg)
                   (try
+                    (log/debug "msg=" msg)
                     (process-msg msg)
                     (catch js/Error e
-                      (let [ws-chan (msg-tag->websocket-channel msg-tag)]
+                      (log/error e)
+                      #_(let [ws-chan (msg-tag->websocket-channel msg-tag)]
                         (a/>! ws-chan msg-payload))))
                   (recur))
                 (do
@@ -60,21 +63,27 @@
     connected-ch))
 
 (defn send! [msg]
+  (a/go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
+            send-queue (conj (or send-queue []) msg)]
+        (if @server-websocket-channel
+          (do
+            (doseq [m send-queue]
+              (log/debug "sending " m)
+              (a/>! @server-websocket-channel (t/serialize m)))
+            (js/localStorage.setItem "send-queue" nil))
+          (let [send-queue (remove #(= :pong (first %)) send-queue)]
+            (log/error "websocket disconnected. queuing msg " send-queue)
+            (js/localStorage.setItem "send-queue" (t/serialize send-queue)))))))
+
+(defn invoke! [msg]
   (let [msg-tag-kw  (first msg)
         msg-tag-return-kw (keyword (str (name msg-tag-kw) "-return"))
-        ws-chan (msg-tag->websocket-channel msg-tag-return-kw)]
-    (a/go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
-                send-queue (conj (or send-queue []) msg)]
-            (if @server-websocket-channel
-              (do
-                (doseq [m send-queue]
-                  (log/debug "sending " m)
-                  (a/>! @server-websocket-channel (t/serialize m)))
-                (js/localStorage.setItem "send-queue" nil))
-              (let [send-queue (remove #(= :pong (first %)) send-queue)]
-                (log/error "websocket disconnected. queuing msg " send-queue)
-                (js/localStorage.setItem "send-queue" (t/serialize send-queue))))))
-    ws-chan))
+        return-ws-chan (msg-tag->websocket-channel msg-tag-return-kw)]
+    (defmethod process-msg msg-tag-return-kw [ [msg-tag msg-payload]]
+      (when msg-payload
+        (a/put! return-ws-chan msg-payload)))
+    (send! msg)
+    return-ws-chan))
 
 (defmethod process-msg :ping [[_ timestamp]]
   (send! [:pong (js/Date.)]))

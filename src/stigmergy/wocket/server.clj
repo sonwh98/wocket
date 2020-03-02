@@ -37,11 +37,11 @@
       (let [message (t/deserialize message)]
         (log/debug "client-message: " message)
         (try
-          (let [[kw msg-payload] message
+          (let [[msg-tag-kw msg-payload] message
                 result (process-msg [client-websocket-channel message])
-                return-kw (keyword (str (name kw) "-return"))]
-            (log/info "return-kw=" return-kw)
-            (send! client-websocket-channel [return-kw result]))
+                return-msg-tag-kw (keyword (str (name msg-tag-kw) "-return"))]
+            (if-not (= return-msg-tag-kw :pong-return)
+              (send! client-websocket-channel [return-msg-tag-kw result])))
           
           (catch Throwable e
             (log/error e)))
