@@ -87,3 +87,21 @@
 
 (defmethod process-msg :ping [[_ timestamp]]
   (send! [:pong (js/Date.)]))
+
+(let [kw->ws-ch (atom {})]
+  (defn event->ws-ch [event-kw]
+    (let [ws (or (@kw->ws-ch event-kw) (a/chan 5))]
+      (swap! kw->ws-ch assoc event-kw ws)
+      ws))
+
+  (defn subscribe [event-kw]
+    (send! [:subscribe event-kw])
+    (let [ws-chan (event->ws-ch event-kw)]
+      (defmethod process-msg event-kw [[_ msg-payload]]
+        (when msg-payload
+          (a/put! ws-chan msg-payload)))
+      ws-chan))
+
+  (defn unsubscribe [event-kw]
+    (send! [:un-subscribe event-kw])
+    (swap! kw->ws-ch dissoc event-kw)))
