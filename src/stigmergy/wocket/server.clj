@@ -16,8 +16,8 @@
 (defn send! [client-websocket-channel edn-msg]
   (log/info "edn-msg " edn-msg)
   (let [transit-msg (t/serialize edn-msg)]
-    (log/info "transit-msg=" transit-msg)
-    (go (>! client-websocket-channel transit-msg))))
+    (log/info "transit-msg2=" transit-msg)
+    (a/put! client-websocket-channel transit-msg)))
 
 (defn broadcast!
   "send transit-msg to all connected client-websocket-channels"
@@ -63,7 +63,7 @@
 
 (defn listen-for-client-websocket-connections [request]
   (with-channel request websocket-channel {:format :str}
-    (start-ping)
+    ;;(start-ping)
     (swap! client-websocket-channels conj websocket-channel)
     (listen-for-messages-on websocket-channel)))
 
@@ -76,6 +76,7 @@
                           (apply func msg-payload)
                           (apply func [msg-payload]))
           return-tag (keyword (str (name msg-tag) "-" "return"))]
+      (log/info return-tag)
       (send! client-websocket-channel [return-tag return-result]))))
 
 (defmacro as-service [func]
