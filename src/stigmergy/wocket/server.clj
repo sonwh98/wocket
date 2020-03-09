@@ -14,9 +14,9 @@
                         kw))
 
 (defn send! [client-websocket-channel edn-msg]
-  (log/info "edn-msg " edn-msg)
+  (log/debug "edn-msg=" edn-msg)
   (let [transit-msg (t/serialize edn-msg)]
-    (log/info "transit-msg2=" transit-msg)
+    (log/debug "transit-msg=" transit-msg)
     (a/put! client-websocket-channel transit-msg)))
 
 (defn broadcast!
@@ -33,7 +33,7 @@
   (reset! client-websocket-channels (filter #(not= % client-websocket-channel) @client-websocket-channels)))
 
 (defn- clean-up! [client-websocket-channel]
-  (log/info "clean-up " client-websocket-channel)
+  (log/debug "clean-up " client-websocket-channel)
   (remove-channel client-websocket-channel)
   (close! client-websocket-channel)
   (m/broadcast [:client-websocket-channel-closed client-websocket-channel]))
@@ -48,16 +48,12 @@
 
 (defn- listen-for-messages-on [client-websocket-channel]
   (go-loop []
-    (log/info "go-loop")
     (if-let [{:keys [message]} (<! client-websocket-channel)]
-      (let [_ (log/debug "client-message1: " message)
-            message (t/deserialize message)
-            _ (log/debug "client-message2: " message)]
+      (let [message (t/deserialize message)]
         (try
           (process-msg [client-websocket-channel message])
           (catch Throwable e
             (log/error e)))
-        (log/info "recur")
         (recur))
       (clean-up! client-websocket-channel))))
 
@@ -76,7 +72,7 @@
                           (apply func msg-payload)
                           (apply func [msg-payload]))
           return-tag (keyword (str (name msg-tag) "-" "return"))]
-      (log/info return-tag)
+      (log/debug return-tag)
       (send! client-websocket-channel [return-tag return-result]))))
 
 (defmacro as-service [func]
@@ -86,10 +82,11 @@
   (log/debug "pong " timestamp))
 
 (defmethod process-msg :subscribe [[client-websocket-channel [_ event-tag]]]
-  (log/info "subscribe " event-tag)
+  (log/debug "subscribe " event-tag)
   (swap! event->client-websocket-channels update-in [event-tag] conj client-websocket-channel))
 
 (defmethod process-msg :un-subscribe [[client-websocket-channel [_ event-tag]]]
+  (log/debug "unsubscribe " event-tag)
   (swap! event->client-websocket-channels update-in [event-tag]
          (fn [ws-channels]
            (remove #(= client-websocket-channel %) ws-channels))))
