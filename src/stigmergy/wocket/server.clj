@@ -27,7 +27,7 @@
   ([event-tag edn-msg]
    (when-let [ws-channels (@event->client-websocket-channels event-tag)]
      (doseq [ws-ch ws-channels]
-       (send! ws-ch edn-msg)))))
+       (send! ws-ch [event-tag edn-msg])))))
 
 (defn- remove-channel [client-websocket-channel]
   (reset! client-websocket-channels (filter #(not= % client-websocket-channel) @client-websocket-channels)))
