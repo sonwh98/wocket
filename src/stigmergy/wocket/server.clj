@@ -68,9 +68,10 @@
 
 (defn make-invokable [func msg-tag-kw]
   (defmethod process-msg msg-tag-kw [[client-websocket-channel [msg-tag msg-payload]]]
-    (let [return-result (if (sequential? msg-payload)
-                          (apply func msg-payload)
-                          (apply func [msg-payload]))
+    (let [return-result (cond
+                          (nil? msg-payload) (func)
+                          (sequential? msg-payload) (apply func msg-payload)
+                          :else (apply func [msg-payload]))
           return-tag (keyword (str (name msg-tag) "-" "return"))]
       (log/debug return-tag)
       (send! client-websocket-channel [return-tag return-result]))))
