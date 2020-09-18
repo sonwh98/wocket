@@ -1,6 +1,6 @@
 (ns user
   (:require [figwheel-sidecar.repl-api :as f]
-o            [chat.server :as s]))
+            [chat.server :as s]))
 
 (defn start []
   (s/start)
