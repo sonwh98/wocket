@@ -8,7 +8,7 @@
 
 ;;:msg-queueing? is true to enable queueing messages to localStorage before sending to server. This is
 ;;useful for offline clients. When connection with server is reestablished, queued messages are sent to server
-(def settings (aton {:msg-queuing? true}))
+(def settings (atom {:msg-queuing? true}))
 
 ;;server-websocket-channel contains a bidirectional core.async channel used to send and read messages from the server
 (def server-websocket-channel (atom nil))
