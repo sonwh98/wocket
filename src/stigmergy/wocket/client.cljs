@@ -36,7 +36,7 @@
          uri (or uri "/ws")
          url (str protocol host port uri)
          connected-ch (a/chan (a/dropping-buffer 1))]
-     (when msg-queuing?
+     (when-not (nil? msg-queuing?)
        (swap! settings assoc :msg-queuing? msg-queuing?))
      
      (a/go-loop []
