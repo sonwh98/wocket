@@ -29,8 +29,7 @@ Connect to Clojure websocket server
 
 (ws/connect-to-websocket-server {:host yourHost :port your-port :uri "/ws" :msg-queuing? false}) 
 
-or use reasonable defaults
-
+;;or use reasonable defaults with no parameters
 (ws/connect-to-websocket-server)
 
 ```
