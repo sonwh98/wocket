@@ -23,5 +23,6 @@
   (prn "from clj " msg)
   )
 
-(ws/connect-to-websocket-server {:port 3000})
+(ws/connect-to-websocket-server {:port 3000 :msg-queuing? false})
 (r/render-component [chat] (js/document.getElementById "app"))
+(prn "haha1")
