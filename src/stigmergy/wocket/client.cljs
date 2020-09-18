@@ -6,6 +6,10 @@
             [taoensso.timbre :as log :include-macros true]))
 
 
+;;:msg-queueing? is true to enable queueing messages to localStorage before sending to server. This is
+;;useful for offline clients. When connection with server is reestablished, queued messages are sent to server
+(def settings (aton {:msg-queuing? true}))
+
 ;;server-websocket-channel contains a bidirectional core.async channel used to send and read messages from the server
 (def server-websocket-channel (atom nil))
 (let [kw->ws-ch (atom {})]
@@ -16,7 +20,9 @@
 (defmulti process-msg (fn [[kw val]]
                         kw))
 
-(defn connect-to-websocket-server [{:keys [host port uri]}]
+(defn connect-to-websocket-server
+  "When msg-queuing? is false, messages are not queued to localStorage"
+  [{:keys [host port uri msg-queuing?]}]
   (let [protocol (.. js/window -location -protocol)
         protocol (if (= protocol "http:")
                    "ws://"
@@ -30,6 +36,9 @@
         uri (or uri "/ws")
         url (str protocol host port uri)
         connected-ch (a/chan (a/dropping-buffer 1))]
+    (when msg-queuing?
+      (swap! settings assoc :msg-queuing? msg-queuing?))
+    
     (a/go-loop []
       (let [{:keys [ws-channel error]} (a/<! (ws-ch url {:format :str}))]
         (log/debug "error=" error)
@@ -64,7 +73,7 @@
 
 (defn send! [msg]
   (a/go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
-            send-queue (conj (or send-queue []) msg)]
+              send-queue (conj (or send-queue []) msg)]
         (if @server-websocket-channel
           (do
             (doseq [m send-queue]
@@ -73,7 +82,8 @@
             (js/localStorage.setItem "send-queue" nil))
           (let [send-queue (remove #(= :pong (first %)) send-queue)]
             (log/error "websocket disconnected. queuing msg " send-queue)
-            (js/localStorage.setItem "send-queue" (t/serialize send-queue)))))))
+            (when (-> @settings :msg-queuing?)
+              (js/localStorage.setItem "send-queue" (t/serialize send-queue))))))))
 
 (defn invoke! [msg]
   (let [msg-tag-kw  (first msg)
