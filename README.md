@@ -27,9 +27,18 @@ Connect to Clojure websocket server
 ```Clojure
 (require [stigmergy.wocket.client :as ws :refer [process-msg]])
 
-(ws/connect-to-websocket-server {:port 3000}) ;; change the port for your configuration
+(ws/connect-to-websocket-server {:host yourHost :port your-port :uri "/ws" :msg-queuing? false}) 
+
+or use reasonable defaults
+
+(ws/connect-to-websocket-server)
 
 ```
+connect-to-websocket-server takes an optional map with the following keys :host :port :uri :msg-queuing? to
+configure how to connect to websocket-server. :uri is the uri (defaults to "/ws"). The uri
+is also known as the route. :msg-queuing? (defaults to true) enables queueing message to localStorage. This is useful
+for offline clients, When clients are reconnected to the websocket server, queued messages are sent.  If :msg-queuing? 
+is false and client is offline or not connected to the websocket server yet, you'll get an exception.
 
 # Send messages between ClojureScript <-> Clojure
 

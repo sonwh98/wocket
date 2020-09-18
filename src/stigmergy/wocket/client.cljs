@@ -22,54 +22,57 @@
 
 (defn connect-to-websocket-server
   "When msg-queuing? is false, messages are not queued to localStorage"
-  [{:keys [host port uri msg-queuing?]}]
-  (let [protocol (.. js/window -location -protocol)
-        protocol (if (= protocol "http:")
-                   "ws://"
-                   "wss://")
-        host (or host (.. js/window -location -hostname))
-        port (or port (.. js/window -location -port))
-        port (if (or (= "80" port)
-                     (= "" port))
-               ""
-               (str ":" port))
-        uri (or uri "/ws")
-        url (str protocol host port uri)
-        connected-ch (a/chan (a/dropping-buffer 1))]
-    (when msg-queuing?
-      (swap! settings assoc :msg-queuing? msg-queuing?))
-    
-    (a/go-loop []
-      (let [{:keys [ws-channel error]} (a/<! (ws-ch url {:format :str}))]
-        (log/debug "error=" error)
-        (if error
-          (do
-            (reset! server-websocket-channel nil)
-            (log/error "websocket error" error)
-            (a/<! (a/timeout 1000))
-            (recur))
-          (do
-            (log/debug "websocket connected")
-            (a/>! connected-ch true)
-            (reset! server-websocket-channel ws-channel)
-            (m/broadcast [:websocket/connected true])
-            (loop []
-              (if-let [{:keys [message]} (a/<! ws-channel)]
-                (let [[msg-tag msg-payload :as msg] (t/deserialize message)]
-                  (m/broadcast msg)
-                  (try
-                    (log/debug "msg=" msg)
-                    (process-msg msg)
-                    (catch js/Error e
-                      (log/error e)
-                      #_(let [ws-chan (msg-tag->websocket-channel msg-tag)]
-                        (a/>! ws-chan msg-payload))))
-                  (recur))
-                (do
-                  (reset! server-websocket-channel nil)
-                  (log/debug "trying reconnect..."))))
-            (recur)))))
-    connected-ch))
+  ([{:keys [host port uri msg-queuing?]}]
+   (let [protocol (.. js/window -location -protocol)
+         protocol (if (= protocol "http:")
+                    "ws://"
+                    "wss://")
+         host (or host (.. js/window -location -hostname))
+         port (or port (.. js/window -location -port))
+         port (if (or (= "80" port)
+                      (= "" port))
+                ""
+                (str ":" port))
+         uri (or uri "/ws")
+         url (str protocol host port uri)
+         connected-ch (a/chan (a/dropping-buffer 1))]
+     (when msg-queuing?
+       (swap! settings assoc :msg-queuing? msg-queuing?))
+     
+     (a/go-loop []
+       (let [{:keys [ws-channel error]} (a/<! (ws-ch url {:format :str}))]
+         (log/debug "error=" error)
+         (if error
+           (do
+             (reset! server-websocket-channel nil)
+             (log/error "websocket error" error)
+             (a/<! (a/timeout 1000))
+             (recur))
+           (do
+             (log/debug "websocket connected")
+             (a/>! connected-ch true)
+             (reset! server-websocket-channel ws-channel)
+             (m/broadcast [:websocket/connected true])
+             (loop []
+               (if-let [{:keys [message]} (a/<! ws-channel)]
+                 (let [[msg-tag msg-payload :as msg] (t/deserialize message)]
+                   (m/broadcast msg)
+                   (try
+                     (log/debug "msg=" msg)
+                     (process-msg msg)
+                     (catch js/Error e
+                       (log/error e)
+                       #_(let [ws-chan (msg-tag->websocket-channel msg-tag)]
+                           (a/>! ws-chan msg-payload))))
+                   (recur))
+                 (do
+                   (reset! server-websocket-channel nil)
+                   (log/debug "trying reconnect..."))))
+             (recur)))))
+     connected-ch))
+
+  ([]
+   (connect-to-websocket-server {})))
 
 (defn send! [msg]
   (a/go (let [send-queue (some-> "send-queue" js/localStorage.getItem t/deserialize)
