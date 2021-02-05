@@ -1,4 +1,4 @@
-(defproject  stigmergy/wocket "0.1.5-SNAPSHOT"
+(defproject  stigmergy/wocket "0.1.6-SNAPSHOT"
   :source-paths ["src"]
   :dependencies [[stigmergy/teleport "0.1.1-SNAPSHOT"]
                  [stigmergy/mercury "0.1.2-SNAPSHOT"]

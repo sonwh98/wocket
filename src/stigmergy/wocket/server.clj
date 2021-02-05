@@ -1,9 +1,9 @@
 (ns stigmergy.wocket.server
   (:require [clojure.core.async :as a :refer [<! >! put! close! go go-loop]]
             [chord.http-kit :refer [with-channel]]
-            [taoensso.timbre :as log]
             [stigmergy.mercury :as m]
-            [stigmergy.teleport :as t]))
+            [stigmergy.teleport :as t]
+            [taoensso.timbre :as log]))
 
 ;;a client-websocket-channel is a bidirectional core.async channel to read from and write messages to clients via websocket
 ;;client-websocket-channels contains all active/opened client-websocket-channel.
@@ -67,7 +67,7 @@
   `(-> ~func var meta :name keyword))
 
 (defn make-invokable [func msg-tag-kw]
-  (defmethod process-msg msg-tag-kw [[client-websocket-channel [msg-tag msg-payload]]]
+  (defmethod process-msg msg-tag-kw [[client-websocket-channel [msg-tag & msg-payload]]]
     (let [return-result (cond
                           (nil? msg-payload) (func)
                           (sequential? msg-payload) (apply func msg-payload)

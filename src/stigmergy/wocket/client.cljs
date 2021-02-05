@@ -88,7 +88,7 @@
             (when (-> @settings :msg-queuing?)
               (js/localStorage.setItem "send-queue" (t/serialize send-queue))))))))
 
-(defn invoke! [msg]
+(defn invoke! [& msg]
   (let [msg-tag-kw  (first msg)
         msg-tag-return-kw (keyword (str (name msg-tag-kw) "-return"))
         return-ws-chan (msg-tag->websocket-channel msg-tag-return-kw)]
