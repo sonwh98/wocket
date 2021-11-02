@@ -60,6 +60,7 @@
 (defn listen-for-client-websocket-connections [request]
   (with-channel request websocket-channel {:format :str}
     ;;(start-ping)
+    (log/debug request)
     (swap! client-websocket-channels conj websocket-channel)
     (listen-for-messages-on websocket-channel)))
 
