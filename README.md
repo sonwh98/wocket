@@ -17,7 +17,7 @@ Setup a route for Websocket connection
 
 ```Clojure
 (defroute app
-    (GET "/ws" [] ws/listen-for-client-websocket-connection))
+    (GET "/ws" [] ws/listen-for-client-websocket-connections))
 ```
 
 ## Client-side ClojureScript setup
